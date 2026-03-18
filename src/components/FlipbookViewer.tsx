@@ -165,58 +165,8 @@ export default function FlipbookViewer({ pages: rawPages, onBack }: Props) {
     return () => clearInterval(interval)
   }, [])
 
-  // Require dragging 40% of the book width before a flip commits.
-  // On mouseup, if drag distance is too short, we move the cursor back to start
-  // position before letting StPageFlip see the event, causing it to snap back.
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-
-    let startX = 0
-    let startY = 0
-    let dragging = false
-    const SYNTH = '__synth__'
-
-    const onDown = (e: MouseEvent) => {
-      if ((e as unknown as Record<string, unknown>)[SYNTH]) return
-      dragging = true
-      startX = e.clientX
-      startY = e.clientY
-    }
-
-    const onUp = (e: MouseEvent) => {
-      if ((e as unknown as Record<string, unknown>)[SYNTH]) return
-      if (!dragging) return
-      if (attractorRunning.current) { dragging = false; return }
-      dragging = false
-
-      const wrapper = el.querySelector('.stf__wrapper')
-      if (!wrapper) return
-      const rect = wrapper.getBoundingClientRect()
-      const dist = Math.abs(e.clientX - startX)
-      const threshold = rect.width * 0.4
-
-      if (dist > 5 && dist < threshold) {
-        // Too short — cancel by stopping this event and dispatching at start pos
-        e.stopPropagation()
-        e.preventDefault()
-        const synth = new MouseEvent('mouseup', {
-          bubbles: true,
-          clientX: startX,
-          clientY: startY,
-        })
-        Object.defineProperty(synth, SYNTH, { value: true })
-        wrapper.dispatchEvent(synth)
-      }
-    }
-
-    el.addEventListener('mousedown', onDown, true)
-    el.addEventListener('mouseup', onUp, true)
-    return () => {
-      el.removeEventListener('mousedown', onDown, true)
-      el.removeEventListener('mouseup', onUp, true)
-    }
-  }, [])
+  // Flip threshold is patched in page-flip library (scripts/patch-pageflip.sh)
+  // — requires dragging 30% past center to complete a flip.
 
   // Keyboard navigation
   useEffect(() => {
