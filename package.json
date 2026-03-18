@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "serve dist -s -l tcp://0.0.0.0:${PORT:-3000}"
   },
   "dependencies": {
     "pdfjs-dist": "^4.9.155",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-pageflip": "^2.0.3"
+    "react-pageflip": "^2.0.3",
+    "serve": "^14.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
