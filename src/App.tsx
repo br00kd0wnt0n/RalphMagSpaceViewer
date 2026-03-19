@@ -61,10 +61,11 @@ export default function App() {
       {/* Starfield is always visible, never fades */}
       <Starfield />
 
-      {/* Loading state — fades in/out */}
+      {/* Loading state — fades + scales in/out */}
       <div style={{
         ...styles.layer,
         opacity: isLoading ? 1 : 0,
+        transform: isLoading ? 'scale(1)' : 'scale(0.95)',
         pointerEvents: isLoading ? 'auto' : 'none',
       }}>
         <LoadingState
@@ -74,10 +75,11 @@ export default function App() {
         />
       </div>
 
-      {/* Magazine viewer + switcher — fades in/out */}
+      {/* Magazine viewer + switcher — fades + scales in/out */}
       <div style={{
         ...styles.layer,
         opacity: (isReady && fade === 'in') ? 1 : 0,
+        transform: (isReady && fade === 'in') ? 'scale(1)' : 'scale(1.03)',
         pointerEvents: isReady ? 'auto' : 'none',
       }}>
         {isReady && (
@@ -106,7 +108,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'opacity 0.4s ease-in-out',
+    transition: 'opacity 0.4s ease-in-out, transform 0.5s ease-in-out',
     zIndex: 5,
   },
 }
