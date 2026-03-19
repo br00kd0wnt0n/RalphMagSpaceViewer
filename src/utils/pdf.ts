@@ -103,7 +103,8 @@ export async function renderPdfPages(
   // Render a single PDF page to canvas, split if spread
   async function renderPdfPage(pageNum: number): Promise<RenderedPage[]> {
     const page = await pdf.getPage(pageNum)
-    const viewport = page.getViewport({ scale })
+    // Use rotation: 0 to ignore PDF page rotation metadata (Issues 4 & 7 have rotate=90)
+    const viewport = page.getViewport({ scale, rotation: 0 })
 
     const canvas = document.createElement('canvas')
     canvas.width = viewport.width
