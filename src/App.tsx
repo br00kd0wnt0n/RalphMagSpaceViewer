@@ -61,12 +61,12 @@ export default function App() {
       {/* Starfield is always visible, never fades */}
       <Starfield />
 
-      {/* Loading state — scales toward viewer on appear, away on disappear */}
+      {/* Loading state */}
       <div style={{
         ...styles.layer,
         opacity: isLoading ? 1 : 0,
-        // Loading comes toward you (small→full), leaves away (full→big)
-        transform: isLoading ? 'scale(1)' : (isReady ? 'scale(1.06)' : 'scale(0.94)'),
+        // Appearing: starts big (close), settles to 1. Disappearing: shrinks away.
+        transform: isLoading ? 'scale(1)' : (isReady ? 'scale(0.92)' : 'scale(1.08)'),
         pointerEvents: isLoading ? 'auto' : 'none',
       }}>
         <LoadingState
@@ -80,8 +80,8 @@ export default function App() {
       <div style={{
         ...styles.layer,
         opacity: (isReady && fade === 'in') ? 1 : 0,
-        // Viewer comes toward you (small→full), leaves away when switching (full→big)
-        transform: (isReady && fade === 'in') ? 'scale(1)' : (fade === 'out' ? 'scale(1.06)' : 'scale(0.94)'),
+        // Fade out (clicked): shrinks away. Fade in (appearing): starts big, settles.
+        transform: (isReady && fade === 'in') ? 'scale(1)' : (fade === 'out' ? 'scale(0.92)' : 'scale(1.08)'),
         pointerEvents: isReady ? 'auto' : 'none',
       }}>
         {isReady && (

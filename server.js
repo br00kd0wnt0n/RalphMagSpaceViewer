@@ -25,6 +25,14 @@ function seedVolume() {
   const srcDir = path.join(__dirname, 'public')
   const srcCovers = path.join(srcDir, 'covers')
 
+  // Always clean up stale .png covers on the volume (replaced by .jpg)
+  if (fs.existsSync(COVER_DIR)) {
+    for (const old of fs.readdirSync(COVER_DIR).filter(f => f.endsWith('.png'))) {
+      console.log(`Removing stale cover: ${old}`)
+      fs.unlinkSync(path.join(COVER_DIR, old))
+    }
+  }
+
   // If source files aren't bundled (gitignored), skip seeding
   if (!fs.existsSync(srcDir) || fs.readdirSync(srcDir).filter(f => f.endsWith('.pdf')).length === 0) {
     console.log('No bundled PDFs found — relying on existing volume content.')
