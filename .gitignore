@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .claude
+
+# Magazine PDFs and covers — served from Railway volume, not bundled in deploys
+public/*.pdf
+public/covers/
+public/ralphworld_logo.jpg

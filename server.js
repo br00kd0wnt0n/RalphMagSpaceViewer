@@ -25,6 +25,12 @@ function seedVolume() {
   const srcDir = path.join(__dirname, 'public')
   const srcCovers = path.join(srcDir, 'covers')
 
+  // If source files aren't bundled (gitignored), skip seeding
+  if (!fs.existsSync(srcDir) || fs.readdirSync(srcDir).filter(f => f.endsWith('.pdf')).length === 0) {
+    console.log('No bundled PDFs found — relying on existing volume content.')
+    return
+  }
+
   // Copy PDFs
   for (const file of fs.readdirSync(srcDir).filter(f => f.endsWith('.pdf'))) {
     const dest = path.join(PDF_DIR, file)
