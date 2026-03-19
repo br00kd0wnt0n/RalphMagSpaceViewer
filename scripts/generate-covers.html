@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head><title>Cover Generator</title></head>
+<body>
+<h2>Generating covers...</h2>
+<div id="log"></div>
+<script type="module">
+import * as pdfjsLib from '/node_modules/pdfjs-dist/build/pdf.mjs'
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.mjs'
+
+const issues = [1,2,3,4,5,6,7]
+const log = document.getElementById('log')
+
+for (const issue of issues) {
+  const url = `/Ralph%20Magazine%20Issue%20${issue}.pdf`
+  log.innerHTML += `<p>Loading issue ${issue}...</p>`
+
+  try {
+    const pdf = await pdfjsLib.getDocument(url).promise
+    const page = await pdf.getPage(1)
+    const viewport = page.getViewport({ scale: 0.5 })
+
+    const canvas = document.createElement('canvas')
+    canvas.width = viewport.width
+    canvas.height = viewport.height
+    const ctx = canvas.getContext('2d')
+    await page.render({ canvasContext: ctx, viewport }).promise
+
+    // Split if landscape
+    let coverCanvas = canvas
+    if (viewport.width > viewport.height) {
+      const halfW = Math.floor(viewport.width / 2)
+      coverCanvas = document.createElement('canvas')
+      coverCanvas.width = halfW
+      coverCanvas.height = viewport.height
+      coverCanvas.getContext('2d').drawImage(canvas, 0, 0, halfW, viewport.height, 0, 0, halfW, viewport.height)
+    }
+
+    // Create download link
+    const dataUrl = coverCanvas.toDataURL('image/jpeg', 0.85)
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = `cover-${issue}.jpg`
+    a.textContent = `Download cover-${issue}.jpg`
+    a.click()
+
+    log.innerHTML += `<p>✓ Issue ${issue} done</p>`
+  } catch(e) {
+    log.innerHTML += `<p>✗ Issue ${issue}: ${e.message}</p>`
+  }
+}
+log.innerHTML += '<p><b>All done!</b></p>'
+</script>
+</body>
+</html>

@@ -1,56 +1,112 @@
 /**
- * App — auto-loads the Ralph Magazine PDF and shows the flipbook viewer.
+ * App — orchestrates password gate, magazine list, switcher, and flipbook viewer.
+ * All content fades in/out smoothly. Starfield remains constant.
  */
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback, type CSSProperties } from 'react'
 import FlipbookViewer from './components/FlipbookViewer'
 import LoadingState from './components/LoadingState'
+import PasswordGate from './components/PasswordGate'
+import MagazineSwitcher, { type MagazineInfo } from './components/MagazineSwitcher'
 import Starfield from './components/Starfield'
 import { usePdfLoader } from './hooks/usePdfLoader'
 
 export default function App() {
   const pdf = usePdfLoader()
+  const [magazines, setMagazines] = useState<MagazineInfo[]>([])
+  const [currentIssue, setCurrentIssue] = useState<number>(1)
+  // Fade state: 'in' = visible, 'out' = fading out before switching
+  const [fade, setFade] = useState<'in' | 'out'>('in')
 
-  // Auto-load the bundled Ralph Magazine PDF on mount
+  // Fetch magazine list on mount
   useEffect(() => {
-    if (pdf.state === 'idle') {
-      fetch('/Ralph%20Magazine%201%20low%20res.pdf')
-        .then(res => {
-          if (!res.ok) throw new Error('PDF not found')
-          return res.blob()
-        })
-        .then(blob => {
-          const file = new File([blob], 'Ralph Magazine 1 low res.pdf', { type: 'application/pdf' })
-          pdf.loadFile(file)
-        })
-        .catch(() => {})
-    }
+    fetch('/api/magazines')
+      .then(res => res.json())
+      .then((list: MagazineInfo[]) => {
+        setMagazines(list)
+        if (list.length > 0) {
+          const latest = list[list.length - 1]
+          setCurrentIssue(latest.issue)
+          pdf.loadFromUrl(latest.pdfUrl, `Ralph ${latest.title}`)
+        }
+      })
+      .catch(err => console.error('Failed to load magazine list:', err))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (pdf.state === 'loading') {
-    return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-        <Starfield />
+  // When PDF becomes ready, fade in
+  useEffect(() => {
+    if (pdf.state === 'ready') {
+      // Short delay to let the DOM settle before fading in
+      const t = setTimeout(() => setFade('in'), 50)
+      return () => clearTimeout(t)
+    }
+  }, [pdf.state])
+
+  const handleSelectIssue = useCallback((issue: number) => {
+    const mag = magazines.find(m => m.issue === issue)
+    if (!mag) return
+
+    // Fade out current content, then load new issue
+    setFade('out')
+    setTimeout(() => {
+      setCurrentIssue(issue)
+      pdf.loadFromUrl(mag.pdfUrl, `Ralph ${mag.title}`)
+    }, 400) // matches CSS transition duration
+  }, [magazines, pdf])
+
+  const isLoading = pdf.state === 'loading'
+  const isReady = pdf.state === 'ready'
+
+  return (
+    <PasswordGate>
+      {/* Starfield is always visible, never fades */}
+      <Starfield />
+
+      {/* Loading state — fades in/out */}
+      <div style={{
+        ...styles.layer,
+        opacity: isLoading ? 1 : 0,
+        pointerEvents: isLoading ? 'auto' : 'none',
+      }}>
         <LoadingState
           progress={pdf.progress}
           pageCount={pdf.pageCount}
           fileName={pdf.fileName}
         />
       </div>
-    )
-  }
 
-  if (pdf.state === 'ready') {
-    return (
-      <>
-        <Starfield />
-        <FlipbookViewer
-          pages={pdf.pages}
-          onBack={pdf.reset}
-        />
-      </>
-    )
-  }
+      {/* Magazine viewer + switcher — fades in/out */}
+      <div style={{
+        ...styles.layer,
+        opacity: (isReady && fade === 'in') ? 1 : 0,
+        pointerEvents: isReady ? 'auto' : 'none',
+      }}>
+        {isReady && (
+          <>
+            <MagazineSwitcher
+              magazines={magazines}
+              currentIssue={currentIssue}
+              onSelect={handleSelectIssue}
+              visible={true}
+            />
+            <FlipbookViewer
+              pages={pdf.pages}
+              onBack={pdf.reset}
+            />
+          </>
+        )}
+      </div>
+    </PasswordGate>
+  )
+}
 
-  // Idle / error — just black with stars
-  return <div style={{ width: '100%', height: '100%', background: '#000' }}><Starfield /></div>
+const styles: Record<string, CSSProperties> = {
+  layer: {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'opacity 0.4s ease-in-out',
+    zIndex: 5,
+  },
 }

@@ -1,22 +1,26 @@
 /**
- * Hook: manages PDF file upload → page rendering pipeline.
- * Provides loading state, progress, rendered page data URLs, and error handling.
+ * Hook: manages PDF loading → page rendering pipeline.
+ * Supports loading from URL (for API-served PDFs) or File object.
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { renderPdfPages, type RenderedPage } from '../utils/pdf'
 
 export type LoadingState = 'idle' | 'loading' | 'ready' | 'error'
 
 export interface PdfLoaderResult {
   state: LoadingState
-  pages: string[] // data URLs
+  pages: string[]
   pageCount: number
-  progress: number // 0-1
+  progress: number
   error: string | null
   fileName: string | null
+  loadFromUrl: (url: string, name?: string) => Promise<void>
   loadFile: (file: File) => Promise<void>
   reset: () => void
 }
+
+// Detect mobile for lower render scale
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
 export function usePdfLoader(): PdfLoaderResult {
   const [state, setState] = useState<LoadingState>('idle')
@@ -25,30 +29,22 @@ export function usePdfLoader(): PdfLoaderResult {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
-  const loadFile = useCallback(async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      setError('Please upload a PDF file!')
-      setState('error')
-      return
-    }
-
+  const renderBuffer = useCallback(async (buffer: ArrayBuffer, name: string) => {
     try {
       setState('loading')
       setError(null)
       setProgress(0)
       setPages([])
-      setFileName(file.name.replace(/\.pdf$/i, ''))
-
-      const buffer = await file.arrayBuffer()
+      setFileName(name)
 
       const rendered = await renderPdfPages(buffer, {
-        scale: 1.5,
+        scale: isMobile ? 1.0 : 1.5,
         priorityPages: 4,
         onPageRendered: (_page: RenderedPage, index: number, total: number) => {
           setPageCount(total)
           setProgress((index + 1) / total)
-          // Update pages array progressively
           setPages(prev => {
             const next = [...prev]
             next[index] = _page.dataUrl
@@ -61,17 +57,50 @@ export function usePdfLoader(): PdfLoaderResult {
       setPageCount(rendered.length)
       setState('ready')
     } catch (err) {
-      console.error('PDF load error:', err)
+      console.error('PDF render error:', err)
       setError(
         err instanceof Error
-          ? `Oops! Couldn't read that PDF: ${err.message}`
-          : 'Something went wrong reading that PDF. Try another one?'
+          ? `Couldn't read that PDF: ${err.message}`
+          : 'Something went wrong reading that PDF.'
       )
       setState('error')
     }
   }, [])
 
+  const loadFromUrl = useCallback(async (url: string, name?: string) => {
+    // Abort any in-progress load
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    try {
+      setState('loading')
+      setError(null)
+      setProgress(0)
+      setPages([])
+      setFileName(name || 'Magazine')
+
+      const res = await fetch(url, { signal: controller.signal })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const buffer = await res.arrayBuffer()
+
+      if (controller.signal.aborted) return
+      await renderBuffer(buffer, name || 'Magazine')
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') return
+      console.error('PDF fetch error:', err)
+      setError('Failed to load the magazine. Try again?')
+      setState('error')
+    }
+  }, [renderBuffer])
+
+  const loadFile = useCallback(async (file: File) => {
+    const buffer = await file.arrayBuffer()
+    await renderBuffer(buffer, file.name.replace(/\.pdf$/i, ''))
+  }, [renderBuffer])
+
   const reset = useCallback(() => {
+    abortRef.current?.abort()
     setState('idle')
     setPages([])
     setPageCount(0)
@@ -80,5 +109,5 @@ export function usePdfLoader(): PdfLoaderResult {
     setFileName(null)
   }, [])
 
-  return { state, pages, pageCount, progress, error, fileName, loadFile, reset }
+  return { state, pages, pageCount, progress, error, fileName, loadFromUrl, loadFile, reset }
 }

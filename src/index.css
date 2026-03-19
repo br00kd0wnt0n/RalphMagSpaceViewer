@@ -124,6 +124,13 @@ body::after {
   100% { background-position: 0% 0%; }
 }
 
+/* Gentle float for magazine thumbnails in the switcher */
+@keyframes thumb-float {
+  0%, 100% { translate: 0 0px; }
+  33%      { translate: 1px -6px; }
+  66%      { translate: -1px -3px; }
+}
+
 @keyframes shadow-pulse {
   0%, 100% { opacity: 1; transform: scaleX(1); }
   35%      { opacity: 0.5; transform: scaleX(0.88); }
