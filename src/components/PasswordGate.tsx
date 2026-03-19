@@ -1,7 +1,7 @@
 /**
  * PasswordGate — simple client-side password screen.
- * Password is configurable via VITE_PASSWORD env var (defaults to 'ralph').
- * Persists auth in sessionStorage.
+ * Password configurable via VITE_PASSWORD env var.
+ * Fades out smoothly before showing content.
  */
 import { useState, useEffect, type CSSProperties } from 'react'
 
@@ -9,6 +9,7 @@ const PASSWORD = import.meta.env.VITE_PASSWORD || 'ralphworldftw2026!'
 
 export default function PasswordGate({ children }: { children: React.ReactNode }) {
   const [authed, setAuthed] = useState(false)
+  const [fading, setFading] = useState(false)
   const [input, setInput] = useState('')
   const [shake, setShake] = useState(false)
 
@@ -24,7 +25,9 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
     e.preventDefault()
     if (input === PASSWORD) {
       sessionStorage.setItem('ralph_auth', 'true')
-      setAuthed(true)
+      // Fade out the gate before showing content
+      setFading(true)
+      setTimeout(() => setAuthed(true), 400)
     } else {
       setShake(true)
       setTimeout(() => setShake(false), 500)
@@ -33,7 +36,11 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div style={styles.overlay}>
+    <div style={{
+      ...styles.overlay,
+      opacity: fading ? 0 : 1,
+      transition: 'opacity 0.4s ease-out',
+    }}>
       <form onSubmit={handleSubmit} style={styles.form}>
         <img src="/ralph-logo.png" alt="Ralph" style={styles.logo} />
         <input

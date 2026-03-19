@@ -24,7 +24,6 @@ dist-ssr
 *.sw?
 .claude
 
-# Magazine PDFs and covers — served from Railway volume, not bundled in deploys
+# Magazine PDFs — served from Railway volume (too large for git)
 public/*.pdf
-public/covers/
 public/ralphworld_logo.jpg

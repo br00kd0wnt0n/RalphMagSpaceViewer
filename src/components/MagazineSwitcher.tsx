@@ -72,9 +72,9 @@ function CoverThumb({
       style={{
         ...styles.thumb,
         transform: `rotate(${rotation}deg)`,
-        animationDelay: `${delay}s`,
-        // Each thumb floats with a unique duration based on its delay
+        // Each thumb floats with a unique duration and staggers its appearance
         animation: `slide-up 0.5s ease-out ${delay}s backwards, thumb-float ${6 + delay * 3}s ease-in-out ${delay}s infinite`,
+        transitionDelay: `${delay * 0.8}s`,
       }}
       title={`Ralph ${magazine.title}`}
     >

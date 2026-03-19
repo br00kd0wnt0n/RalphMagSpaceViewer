@@ -110,7 +110,7 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'opacity 0.4s ease-in-out, transform 0.5s ease-in-out',
+    transition: 'opacity 0.45s ease-in-out, transform 0.55s ease-in-out',
     zIndex: 5,
   },
 }
