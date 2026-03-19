@@ -15,6 +15,40 @@ const PORT = process.env.PORT || 3000
 const PDF_DIR = process.env.PDF_DIR || path.join(__dirname, 'public')
 const COVER_DIR = process.env.COVER_DIR || path.join(PDF_DIR, 'covers')
 
+// On first deploy, seed the volume from the bundled public/ files if the volume is empty.
+// This only runs once — subsequent deploys skip it because the files already exist.
+function seedVolume() {
+  if (PDF_DIR === path.join(__dirname, 'public')) return // local dev, no volume
+  if (!fs.existsSync(PDF_DIR)) fs.mkdirSync(PDF_DIR, { recursive: true })
+  if (!fs.existsSync(COVER_DIR)) fs.mkdirSync(COVER_DIR, { recursive: true })
+
+  const srcDir = path.join(__dirname, 'public')
+  const srcCovers = path.join(srcDir, 'covers')
+
+  // Copy PDFs
+  for (const file of fs.readdirSync(srcDir).filter(f => f.endsWith('.pdf'))) {
+    const dest = path.join(PDF_DIR, file)
+    if (!fs.existsSync(dest)) {
+      console.log(`Seeding volume: ${file}`)
+      fs.copyFileSync(path.join(srcDir, file), dest)
+    }
+  }
+
+  // Copy covers
+  if (fs.existsSync(srcCovers)) {
+    for (const file of fs.readdirSync(srcCovers)) {
+      const dest = path.join(COVER_DIR, file)
+      if (!fs.existsSync(dest)) {
+        console.log(`Seeding volume: covers/${file}`)
+        fs.copyFileSync(path.join(srcCovers, file), dest)
+      }
+    }
+  }
+
+  console.log('Volume seed check complete.')
+}
+seedVolume()
+
 // Load magazine metadata
 const magazines = JSON.parse(fs.readFileSync(path.join(__dirname, 'magazines.json'), 'utf-8'))
 
