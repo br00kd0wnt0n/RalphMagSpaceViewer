@@ -61,11 +61,12 @@ export default function App() {
       {/* Starfield is always visible, never fades */}
       <Starfield />
 
-      {/* Loading state — fades + scales in/out */}
+      {/* Loading state — scales toward viewer on appear, away on disappear */}
       <div style={{
         ...styles.layer,
         opacity: isLoading ? 1 : 0,
-        transform: isLoading ? 'scale(1)' : 'scale(0.95)',
+        // Loading comes toward you (small→full), leaves away (full→big)
+        transform: isLoading ? 'scale(1)' : (isReady ? 'scale(1.06)' : 'scale(0.94)'),
         pointerEvents: isLoading ? 'auto' : 'none',
       }}>
         <LoadingState
@@ -75,11 +76,12 @@ export default function App() {
         />
       </div>
 
-      {/* Magazine viewer + switcher — fades + scales in/out */}
+      {/* Magazine viewer + switcher */}
       <div style={{
         ...styles.layer,
         opacity: (isReady && fade === 'in') ? 1 : 0,
-        transform: (isReady && fade === 'in') ? 'scale(1)' : 'scale(1.03)',
+        // Viewer comes toward you (small→full), leaves away when switching (full→big)
+        transform: (isReady && fade === 'in') ? 'scale(1)' : (fade === 'out' ? 'scale(1.06)' : 'scale(0.94)'),
         pointerEvents: isReady ? 'auto' : 'none',
       }}>
         {isReady && (
