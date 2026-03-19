@@ -33,27 +33,26 @@ function seedVolume() {
     }
   }
 
-  // If source files aren't bundled (gitignored), skip seeding
-  if (!fs.existsSync(srcDir) || fs.readdirSync(srcDir).filter(f => f.endsWith('.pdf')).length === 0) {
-    console.log('No bundled PDFs found — relying on existing volume content.')
-    return
-  }
-
-  // Copy PDFs
-  for (const file of fs.readdirSync(srcDir).filter(f => f.endsWith('.pdf'))) {
-    const dest = path.join(PDF_DIR, file)
-    if (!fs.existsSync(dest)) {
-      console.log(`Seeding volume: ${file}`)
-      fs.copyFileSync(path.join(srcDir, file), dest)
-    }
-  }
-
-  // Copy covers (always overwrite — they're small and may have been updated)
+  // Always overwrite covers from bundled source (they're small, ~300KB total)
   if (fs.existsSync(srcCovers)) {
     for (const file of fs.readdirSync(srcCovers)) {
       const dest = path.join(COVER_DIR, file)
-      console.log(`Seeding volume: covers/${file}`)
+      console.log(`Syncing cover: ${file}`)
       fs.copyFileSync(path.join(srcCovers, file), dest)
+    }
+  }
+
+  // Copy PDFs only if bundled (they're gitignored so usually skipped)
+  const srcPdfs = fs.existsSync(srcDir) ? fs.readdirSync(srcDir).filter(f => f.endsWith('.pdf')) : []
+  if (srcPdfs.length === 0) {
+    console.log('No bundled PDFs — relying on existing volume content.')
+  } else {
+    for (const file of srcPdfs) {
+      const dest = path.join(PDF_DIR, file)
+      if (!fs.existsSync(dest)) {
+        console.log(`Seeding volume: ${file}`)
+        fs.copyFileSync(path.join(srcDir, file), dest)
+      }
     }
   }
 
