@@ -49,7 +49,11 @@ const Page = forwardRef<HTMLDivElement, PageProps>(
           <img
             src={imageUrl}
             alt={`Page ${pageIndex + 1}`}
-            style={pageStyles.pageImage}
+            style={{
+              ...pageStyles.pageImage,
+              // On mobile, contain to avoid distortion; on desktop, fill to match exact page dimensions
+              objectFit: window.innerWidth < 600 ? 'contain' : 'fill',
+            }}
             draggable={false}
           />
           <div style={pageStyles.paperTexture} />
@@ -70,8 +74,8 @@ interface Props {
 }
 
 export default function FlipbookViewer({ pages: rawPages, onBack }: Props) {
-  // Pad with blank pages so cover/back appear as single centered pages.
-  // showCover is off (it forces hard density), so we fake it with blanks.
+  const isMobile = window.innerWidth < 600
+  // Pad with blank pages so cover is soft (showCover=false avoids hard density).
   const pages = ['__blank__', ...rawPages, ...(rawPages.length % 2 === 0 ? ['__blank__'] : [])]
   const bookRef = useRef<FlipBookRef>(null)
   const [currentPage, setCurrentPage] = useState(0)
@@ -236,10 +240,17 @@ export default function FlipbookViewer({ pages: rawPages, onBack }: Props) {
       <div style={viewerStyles.stage}>
         <div style={{
           ...viewerStyles.floatingWrapper,
-          // Shift left when on cover so the visible cover page is centered
-          marginLeft: (currentPage <= 1) ? -bookWidth : 0,
-          marginRight: (currentPage >= pages.length - 2) ? -bookWidth : 0,
+          // On desktop: shift to center the cover (blank page on left)
+          // On mobile: no shift needed, showCover handles it
+          // On desktop spread mode: shift to center cover over the blank page
+          // On mobile portrait mode: no shift needed (blank page is invisible on black)
+          ...(!isMobile ? {
+            marginLeft: (currentPage <= 1) ? -bookWidth : 0,
+            marginRight: (currentPage >= pages.length - 2) ? -bookWidth : 0,
+          } : {}),
           transition: 'margin 0.8s ease-in-out',
+          // Disable 3D float on mobile for performance
+          ...(isMobile ? { animation: 'none', transform: 'none' } : {}),
         }}>
         {/* @ts-expect-error react-pageflip types are loose */}
         <HTMLFlipBook
@@ -256,7 +267,7 @@ export default function FlipbookViewer({ pages: rawPages, onBack }: Props) {
           onFlip={onFlip}
           flippingTime={1200}
           usePortrait={isNarrow}
-          startPage={0}
+          startPage={isMobile ? 1 : 0}
           drawShadow={true}
           maxShadowOpacity={0.5}
           useMouseEvents={true}

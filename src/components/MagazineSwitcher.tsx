@@ -19,7 +19,8 @@ interface Props {
 }
 
 export default function MagazineSwitcher({ magazines, currentIssue, onSelect, visible }: Props) {
-  if (!visible || magazines.length <= 1) return null
+  // Hide on mobile — not enough space for side covers
+  if (!visible || magazines.length <= 1 || window.innerWidth < 600) return null
 
   // Split other issues into left and right columns
   const others = magazines.filter(m => m.issue !== currentIssue)

@@ -31,7 +31,8 @@ for (const file of files) {
   const data = new Uint8Array(fs.readFileSync(path.join(PDF_DIR, file)))
   const pdf = await pdfjsLib.getDocument({ data, useSystemFonts: true }).promise
   const page = await pdf.getPage(1)
-  const viewport = page.getViewport({ scale: SCALE })
+  // Use rotation: 0 to ignore PDF page rotation flags (Issues 4 & 7 have rotate=90)
+  const viewport = page.getViewport({ scale: SCALE, rotation: 0 })
 
   const canvas = createCanvas(viewport.width, viewport.height)
   const ctx = canvas.getContext('2d')
