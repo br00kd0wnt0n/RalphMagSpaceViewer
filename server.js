@@ -34,14 +34,12 @@ function seedVolume() {
     }
   }
 
-  // Copy covers
+  // Copy covers (always overwrite — they're small and may have been updated)
   if (fs.existsSync(srcCovers)) {
     for (const file of fs.readdirSync(srcCovers)) {
       const dest = path.join(COVER_DIR, file)
-      if (!fs.existsSync(dest)) {
-        console.log(`Seeding volume: covers/${file}`)
-        fs.copyFileSync(path.join(srcCovers, file), dest)
-      }
+      console.log(`Seeding volume: covers/${file}`)
+      fs.copyFileSync(path.join(srcCovers, file), dest)
     }
   }
 
